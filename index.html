@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מחסנית — Stack</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f4f0;
+      --white: #ffffff;
+      --ink: #1a1a2e;
+      --ink-dim: #4a5568;
+      --accent: #e07020;
+      --blue: #1a5fb4;
+      --green: #2d7a4f;
+      --red: #c0392b;
+      --teacher-bg: #eef4ff;
+      --teacher-border: #1a5fb4;
+      --border: #c8c4bc;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: #e8e6e0;
+      color: var(--ink);
+      direction: rtl;
+    }
+
+    .presentation-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--bg);
+      min-height: 100vh;
+      box-shadow: 0 0 40px rgba(0,0,0,0.15);
+    }
+
+    /* ── SLIDE SYSTEM ── */
+    .slide {
+      display: none;
+      min-height: 100vh;
+      padding: 64px 80px 110px;
+      position: relative;
+      flex-direction: column;
+    }
+    .slide.active {
+      display: flex;
+      animation: fadeIn 0.35s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── TEACHER NOTE ── */
+    .teacher-note {
+      background: var(--teacher-bg);
+      border-right: 4px solid var(--teacher-border);
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-top: auto;
+      font-size: 1.3rem;
+      color: #1a3a6a;
+      line-height: 1.75;
+    }
+    .teacher-note ul { padding-right: 18px; }
+    .teacher-note li { margin-bottom: 4px; }
+
+    /* ── TITLE SLIDE ── */
+    .title-slide {
+      background: var(--bg);
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      gap: 32px;
+    }
+    .title-slide h1 {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      color: var(--ink);
+    }
+    .title-slide h1 span { color: var(--accent); }
+    .title-slide .subtitle {
+      font-size: 1.4rem;
+      color: var(--ink-dim);
+      font-weight: 300;
+    }
+
+    /* ── SLIDE HEADING ── */
+    .slide-heading {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--ink);
+      border-bottom: 3px solid var(--accent);
+      padding-bottom: 12px;
+      margin-bottom: 36px;
+      display: inline-block;
+    }
+
+    /* ── CONTENT AREA ── */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ── IMAGE + QUESTIONS LAYOUT ── */
+    .pez-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 40px;
+      flex: 1;
+      align-items: center;
+    }
+    .img-placeholder {
+      background: var(--white);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-dim);
+      font-size: 0.85rem;
+      min-height: 280px;
+    }
+    .img-placeholder img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+    .questions-big {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .q-item {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.5;
+      padding-right: 16px;
+      border-right: 3px solid var(--accent);
+    }
+
+    /* ── LIFO ── */
+    .lifo-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+    .lifo-word {
+      font-family: 'Space Mono', monospace;
+      font-size: 2rem;
+      color: var(--ink-dim);
+      letter-spacing: 8px;
+      direction: ltr;
+    }
+    .lifo-word span { color: var(--accent); font-size: 2.6rem; font-weight: 700; }
+    .lifo-acronym {
+      font-family: 'Space Mono', monospace;
+      font-size: 5rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 16px;
+      direction: ltr;
+    }
+
+    /* ── VOCAB ── */
+    .vocab-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+    .vocab-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 32px 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .vocab-he {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .vocab-en {
+      font-family: 'Space Mono', monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--blue);
+      margin-top: 36px;
+      /*direction: ltr;*/
+    }
+    .vocab-why {
+      font-size: 1.4rem;
+      color: var(--ink-dim);
+      margin-top: 24px;
+      line-height: 1.5;
+    }
+
+    /* ── QUESTION ── */
+    .question-big {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .question-text {
+      font-size: 1.5rem;
+      line-height: 2;
+      color: var(--ink);
+      background: var(--white);
+      border-radius: 16px;
+      padding: 40px 48px;
+      border: 2px solid var(--border);
+      max-width: 720px;
+    }
+    .question-text .hl { color: var(--accent); font-weight: 700; }
+    .question-text .goal-top {
+      margin-bottom: 24px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--blue);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+    }
+    .question-text .goal-bottom {
+      margin-top: 0px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--blue);
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+
+    /* ── PSEUDOCODE ── */
+    .pseudo-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pseudocode {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px 52px;
+      font-family: 'Space Mono', monospace;
+      font-size: 1.4rem;
+      line-height: 2.4;
+      direction: rtl;
+      white-space: pre;
+      width: 100%;
+    }
+    .pseudocode .kw { color: var(--blue); font-weight: 700; }
+    .pseudocode .val { color: var(--accent); font-weight: 700; }
+    .pseudocode .op { color: var(--ink-dim); }
+    .pseudocode .line { display: block; border-radius: 4px; padding: 0 6px; transition: background 0.2s; }
+    .pseudocode .line.active-line { background: rgba(224,112,32,0.12); }
+
+    /* ── ANIMATION ── */
+    .anim-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      flex: 1;
+      align-items: start;
+    }
+    .anim-code-panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 36px;
+    }
+    .anim-pseudocode {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.4rem;
+      line-height: 2.3;
+      direction: rtl;
+      white-space: pre-wrap;
+    }
+    .anim-pseudocode .kw { color: var(--blue); font-weight: 700; }
+    .anim-pseudocode .val { color: var(--accent); font-weight: 700; }
+    .anim-pseudocode .line { display: block; border-radius: 4px; padding: 0 6px; transition: background 0.2s; }
+    .anim-pseudocode .line.active-line { background: rgba(224,112,32,0.15); }    
+    .anim-controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+    .anim-btn {
+      background: var(--accent);
+      color: #f5f4f0;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 24px;
+      cursor: pointer;
+      font-family: 'Heebo', sans-serif;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+    .anim-btn:hover { background: var(--ink); }
+    .anim-status {
+      font-size: 1.4rem;
+      color: var(--ink-dim);
+      text-align: center;
+      margin-top: 10px;
+      min-height: 18px;
+      font-family: 'Space Mono', monospace;
+      direction: ltr;
+    }
+    .stack-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .stack-box {
+      width: 200px;
+      min-height: 300px;
+      border: 2px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      padding: 8px;
+      gap: 6px;
+      background: var(--white);
+    }
+    .stack-item {
+      width: 180px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: var(--bg);
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .stack-item.entering { animation: pushIn 0.4s ease; }
+    .stack-item.leaving  { animation: popOut 0.4s ease forwards; }
+    @keyframes pushIn {
+      from { opacity: 0; transform: translateY(-16px) scale(0.9); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes popOut {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: translateY(-16px) scale(0.9); }
+    }
+    .output-area {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.4rem;
+      color: var(--blue);
+      direction: ltr;
+      min-height: 24px;
+      font-weight: 600;
+    }
+
+    /* ── METHODS ── */
+    .methods-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex: 1;
+    }
+    .method-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px 28px;
+    }
+    .method-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.4rem;
+      color: var(--blue);
+      direction: ltr;
+      font-weight: 700;
+    }
+    .method-desc {
+      font-size: 1.4rem;
+      color: var(--ink-dim);
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    /* ── TASK BOX ── */
+    .task-box {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 28px 36px;
+      border: 2px solid var(--accent);
+      font-size: 1.4rem;
+      line-height: 1.8;
+      color: var(--ink);
+    }
+
+    /* ── CODE BLOCK ── */
+    .code-block {
+      background: var(--ink);
+      border-radius: 12px;
+      padding: 32px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 1.4rem;
+      line-height: 2;
+      direction: ltr;
+      text-align: left;
+      white-space: pre;
+      overflow-x: auto;
+      flex: 1;
+      color: #e8eaf0;
+    }
+    .code-block .kw  { color: #569cd6; }
+    .code-block .cls { color: #4ec9b0; }
+    .code-block .num { color: #b5cea8; }
+    .code-block .cmt { color: #6a9955; }
+
+    /* ── CYCLE WRAP UP ── */
+    .cycle-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      justify-content: center;
+    }
+    .cycle-item {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 20px;
+      align-items: center;
+      background: var(--white);
+      border-radius: 10px;
+      padding: 16px 24px;
+      border: 1px solid var(--border);
+    }
+    .cycle-item .step-name {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: var(--accent);
+    }
+    .cycle-item .step-impl {
+      font-size: 1.4rem;
+      color: var(--ink-dim);
+      line-height: 1.5;
+    }
+
+    /* ── ERROR LIST ── */
+    .error-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+    .error-item {
+      background: var(--white);
+      border-right: 4px solid var(--red);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 1.4rem;
+      line-height: 1.7;
+    }
+    .error-item .error-title {
+      color: var(--red);
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 1.6rem;
+    }
+
+    /* ── NAV ── */
+    .nav-buttons {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 1000;
+      direction: ltr;
+    }
+    .nav-btn {
+      background: var(--ink);
+      color: #f5f4f0;
+      border: none;
+      padding: 10px 26px;
+      border-radius: 24px;
+      cursor: pointer;
+      font-family: 'Heebo', sans-serif;
+      font-size: 1.2rem;
+      transition: background 0.2s;
+    }
+    .nav-btn:hover:not(:disabled) { background: var(--accent); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    .slide-number {
+      position: fixed;
+      bottom: 30px;
+      left: 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--ink-dim);
+      direction: ltr;
+    }
+
+    @media (max-width: 768px) {
+      .slide { padding: 30px 20px 90px; }
+      .pez-layout, .vocab-row, .anim-layout, .methods-grid, .cycle-item { grid-template-columns: 1fr; }
+      .title-slide h1 { font-size: 2.8rem; }
+      .lifo-acronym { font-size: 3.5rem; }
+      .pseudocode { font-size: 1rem; padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="presentation-container">
+
+<!-- ══════════════════ SLIDE 0 — TITLE ══════════════════ -->
+<div class="slide active title-slide">
+  <span style="opacity:15%"><h1>מצגת בינתיים<br>ללא<span>כותרת</span></h1></span>
+  <!--div class="subtitle">שיעור גילוי — בדרך לעולם המחסניות</div-->
+    <div class="teacher-note" style="max-width:620px;">
+      יעדי השיעור:
+      <div style="margin-top:10px; padding-right:16px; line-height:1.5;">
+        <span style="font-size:1.35rem">
+          <strong>הקניית ידע חדש</strong><br>
+          <strong>פיתוח מיומנויות חשיבה</strong><br>
+          <strong>לימוד תבנית פתרון בעיות</strong>
+        </span>
+      </div>
+      <div style="margin-top:12px;">אין כותרת למצגת בכוונה — הנושא מתברר במהלך השיעור</div>
+    </div>
+</div>
+
+<!-- ══════════════════ SLIDE 1 — PEZ ══════════════════ -->
+<div class="slide">
+  <div class="content-area">
+    <div class="pez-layout" style="flex:1;">
+      <div class="img-placeholder" id="pez-img" style="padding:0; overflow:hidden;">
+        <img src="pez-image.bmp" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">
+      </div>
+      <div class="questions-big">
+        <div class="q-item"> התבוננו בזמן שאתם מתכבדים:</div>
+        <div class="q-item">כיצד עובד מיכל הסוכריות?</div>
+        <div class="q-item">מה מאפיין את דרך הפעולה?</div>
+      </div>
+    </div>
+    <div class="teacher-note">
+      <ul>
+        <li><strong>שאלות מנחות:</strong> מהי שיטת האחסון? איך מוציאים סוכרייה? איך מכניסים סוכריה חדשה?</li>
+        <li><strong>חפצים אפשריים נוספים:</strong> מחזיק מפיות, אקדח צעצוע
+          <!--span style="display:block; gap:12px; justify-content:center; margin-top:0px;">
+            <img src="napkins-image.bmp" style="height:50px; border-radius:6px; object-fit:cover;">
+            <img src="bbgun-image.bmp" style="height:50px; border-radius:6px; object-fit:cover;">
+          </span-->    
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 2 — LIFO ══════════════════ -->
+<div class="slide">
+  <div class="content-area">
+    <div class="lifo-center">
+      <div class="lifo-word">
+        <span>L</span>ast &nbsp;<span>I</span>n &nbsp;<span>F</span>irst &nbsp;<span>O</span>ut
+      </div>
+      <div class="lifo-acronym">LIFO</div>
+    </div>
+    <div class="teacher-note">
+      <ul>
+        <li>אם כבר לימדנו <strong>תור </strong>אז אפשרי להזכיר, ולתת את ההקשר - FIFO </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 3 — VOCAB ══════════════════ -->
+<div class="slide">
+  <div class="content-area">
+    <div class="vocab-row">
+      <div class="vocab-card">
+        <div class="vocab-he">דחוף</div>
+        <div class="vocab-why">כי דוחפים</div>
+        <div class="vocab-en" id="en-push" style="opacity:0;">()push</div>
+      </div>
+      <div class="vocab-card">
+        <div class="vocab-he">קפוץ</div>
+        <div class="vocab-why">כי זה קופץ (יש לו קפיץ)</div>
+        <div class="vocab-en" id="en-pop" style="opacity:0;">()pop</div>
+      </div>
+    </div>
+    <div class="teacher-note">
+      <ul>
+        <li>מציגים את המושגים האלה <strong>מבלי</strong> לציין עדיין שהמבנה נקרא "מחסנית"</li>
+        <li>מינוח לא מוכר עשוי להלחיץ תלמידים - לאחר התנסות המושגים פחות מאיימים ומתקבלים בטבעיות</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 4 — QUESTION ══════════════════ -->
+<div class="slide">
+  <div class="content-area">
+    <div class="question-big" style="display:flex; gap:40px; align-items:center;">
+      <div class="question-text">
+        <div class="goal-top">אתגר בזוגות:</div>
+        יש לנו מיכל שתומך פעולות: <span class="hl">push</span> ו-<span class="hl">pop</span>.<br>
+        קולטים מספרים חיוביים שלמים בזה אחר זה, עד שמגיע <span class="hl">1-</span>.<br><br>
+        <div class="goal-bottom">עלינו להדפיס את המספרים בסדר הפוך מסדר הגעתם</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:16px; min-width:200px;">
+        
+        <!-- floating numbers input -->
+        <div style="font-family:'Space Mono',monospace; font-size:1.3rem; display:flex; gap:16px; padding-bottom:8px;">
+          <span style="color:#6b7280; transform:translateY(1px); display:inline-block;">1-</span>
+          <!--span style="color:#9b2335; transform:translateY(4px); display:inline-block;">6</span-->
+          <span style="color:#e07020; transform:translateY(-4px); display:inline-block;">3</span>
+          <span style="color:#1a5fb4; transform:translateY(3px); display:inline-block;">7</span>
+          <span style="color:#2d7a4f; transform:translateY(-2px); display:inline-block;">2</span>
+          <span style="color:#9b2335; transform:translateY(4px); display:inline-block;">5</span>
+        </div>
+
+        <!-- container -->
+        <div style="width:140px; height:200px; border:3px solid #1a1a2e; border-top:none; border-radius:0 0 16px 16px; background:#f5f4f0;">
+        </div>
+
+        <!-- output -->
+        <div style="font-family:'Space Mono',monospace; font-size:1.1rem; color:#1a1a2e; display:flex; gap:12px;">
+          <span>5</span><span>2</span><span>7</span><span>3</span><!--span>6</span-->
+        </div>
+        <!--div style="font-family:'Space Mono',monospace; font-size:1.2rem; color:var(--blue); margin-bottom:4px;">output:</div>
+        <div style="display:flex; flex-direction:row; gap:12px; direction:ltr;">
+          <span id="out0" style="font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--blue); min-width:32px; text-align:center;">_</span>
+          <span id="out1" style="font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--blue); min-width:32px; text-align:center;">_</span>
+          <span id="out2" style="font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--blue); min-width:32px; text-align:center;">_</span>
+          <span id="out3" style="font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--blue); min-width:32px; text-align:center;">_</span>
+        </div-->
+        <!--div id="anim-output" style="font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--blue); direction:ltr; text-align:left; min-height:32px;"></div-->
+      </div>      
+    </div>
+    <div class="teacher-note">
+      <ul>
+        <li><strong> בחירת השאלה: <br> הפתרון הפשוט מדגים שהכוח טמון באופן אינהרנטי במבנה הנתונים עצמו - כמעט ללא עבודה </strong></li>
+        <li>עבודת בזוגות ברמת פסאדו-קוד - מעודדים לכתוב/לשרטט על דף  </li>
+        <li>המורה מסתובב בין הזוגות ומכווין</li>
+        <!--li><strong>שגיאות נפוצות לצפות:</strong> דחיפת 1- למכל · קפיצה לפני דחיפה · שכחת בדיקת ריק · דחוף+קפוץ באותה לולאה</li-->
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 6 — ANIMATION ══════════════════ -->
+<div class="slide">
+  <div class="content-area" style="flex:1;">
+    <div class="anim-layout" style="flex:1;">
+      <div>
+        <div class="anim-code-panel">
+          <div class="anim-pseudocode"><span class="line" id="aline0"><span class="kw">קלוט</span> מספר</span><span class="line" id="aline1"><span class="kw">כל עוד</span> המספר <span class="op">שונה מ-</span> <span class="val">1-</span> :</span><span class="line" id="aline2">    <span class="kw">דחוף</span> למיכל</span><span class="line" id="aline3">    <span class="kw">קלוט</span> מספר הבא</span><span class="line" id="aline5"><span class="kw">כל עוד</span> המיכל <span class="op">לא ריק</span> :</span><span class="line" id="aline6">    <span class="kw">קפוץ</span></span><span class="line" id="aline7">    <span class="kw">הדפס</span></span><span class="line" id="aline8"><span class="kw">סיים</span></span></div>
+        </div>
+          <div class="anim-controls">
+            <button class="anim-btn" onclick="animStep()">צעד הבא ←</button>
+            <button class="anim-btn" onclick="animReset()">איפוס</button>
+          </div>
+          <!--div class="anim-status" id="anim-status">לחץ "צעד הבא" להתחלה</div-->
+      </div>
+      <div class="stack-panel">
+        <div style="font-family:'Space Mono',monospace; font-size:1.2rem; color:var(--accent); text-align:center; margin-bottom:4px;">input: 3, 7, 2, 5</div>
+        <strong><div id="current-input" style="font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--accent); min-height:32px;"></div></strong>
+        <div id="popped-display" style="font-family:'Space Mono',monospace; font-size:2rem; color:var(--blue); font-weight:700; min-height:48px; text-align:center;"></div>
+        <div class="stack-box" id="stack-box"></div>
+        <div class="output-area" id="anim-output">output: </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 7 — NAME REVEAL + METHODS ══════════════════ -->
+<div class="slide">
+  <div class="slide-heading">מבנה הנתונים הזה נקרא — <span style="color:var(--accent)">מחסנית / Stack</span></div>
+  <div class="content-area">
+    <div style="font-family:'Space Mono',monospace; font-size:1.4rem; color:var(--blue); margin-bottom:0px; margin-top:-15px; direction:ltr;">Stack&lt;int&gt; myStack = <span style="color:var(--ink);">new</span> Stack&lt;int&gt;(); <span style="color:var(--ink-dim); font-size:1.1rem;">// T = int</span></div>
+    <div class="methods-grid">
+      <div class="method-card">
+        <div class="method-name">void Push(T item)</div>
+        <div class="method-desc">הפעולה דוחפת את הערך למחסנית &nbsp;<span style="color:var(--ink-dim); font-size:1.2rem; direction:ltr; unicode-bidi:bidi-override; display:block;">
+          <br>// myStack.Push(5);</span></div>
+      </div>
+      <div class="method-card">
+        <div class="method-name">T Pop()</div>
+        <div class="method-desc">הפעולה מחזירה את הערך שלמעלה לאחר שהוציאה אותו מהמחסנית &nbsp;<span style="color:var(--ink-dim); font-size:1.2rem; direction:ltr; unicode-bidi:bidi-override; display:block;">
+          <br>// int next = myStack.Pop();</span></div>
+      </div>
+      <div class="method-card">
+        <div class="method-name">T Top()</div>
+        <div class="method-desc">הפעולה מחזירה את הערך שלמעלה מבלי להוציאו &nbsp;<span style="color:var(--ink-dim); font-size:1.2rem; direction:ltr; unicode-bidi:bidi-override; display:block;">
+          <br>// int top = myStack.Top();</span></div>
+      </div>
+      <div class="method-card">
+        <div class="method-name">bool IsEmpty</div>
+        <div class="method-desc">הפעולה מחזירה true  אם המחסנית ריקה, אחרת false.&nbsp;<span style="color:var(--ink-dim); font-size:1.2rem; direction:ltr; unicode-bidi:bidi-override; display:block;">
+          <br>// bool isEmpty = myStack.IsEmpty();</span></div>
+      </div>
+    </div>
+    <div class="teacher-note">
+      <ul>
+        <li>עכשיו אפשר לקשר: <strong>זהו נושא השיעור - </strong> מבנה-נתונים הנקרא <strong>מחסנית</strong>!
+        <li>בכיתה חזקה אפשר להזכיר את נושא ה- call stack במידה ולמדו את הנושא.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 8 — TASK ══════════════════ -->
+<div class="slide">
+  <div class="content-area">
+    <div class="question-big">
+      <div class="task-box">
+        כתבו את הפתרון ב-<strong>#C</strong>.<br><br>
+        השתמשו ב-<strong>&lt;Stack&lt;int</strong> עם הפעולות שלמדנו.<br><br>
+        <span style="color:var(--ink-dim); font-size:1.4rem;"> את העיקרון הבנתם — עכשיו נשאר רק הסינטאקס.</span>
+      </div>
+    </div>
+    <div class="teacher-note">
+      <ul>
+        <li>הפעם עבודה עצמאית בסביבת הפיתוח - כולל הרצה ובדיקה</li>
+        <li>עוזרים לתלמידים לשחזר את הפתרון הקונספטואלי, במידה ומסתבכים</li>
+        <li>אפשר להוסיף תרגול עם  טיפוסים נוספים - לכולם או למי שמתקדמים מהר</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 9 — C# SOLUTION ══════════════════ -->
+<div class="slide">
+  <div class="slide-heading">הפתרון ב-C#</div>
+  <div class="content-area">
+    <div class="code-block"><span class="cls">Stack</span>&lt;<span class="kw">int</span>&gt; mystack = <span class="kw">new</span> <span class="cls">Stack</span>&lt;<span class="kw">int</span>&gt;();
+<span class="kw">int</span> num = <span class="cls">int</span>.Parse(<span class="cls">Console</span>.ReadLine());
+
+<span class="kw">while</span> (num != <span class="num">-1</span>)
+{
+    mystack.Push(num);
+    num = <span class="cls">int</span>.Parse(<span class="cls">Console</span>.ReadLine());
+}
+
+<span class="kw">while</span> (!mystack.IsEmpty())
+{
+    <span class="cls">Console</span>.WriteLine(mystack.Pop());
+}</div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 10 — WRAP UP ══════════════════ -->
+<div class="slide">
+  <div class="slide-heading">מעגל הלמידה שעשינו</div>
+  <div class="content-area">
+    <div class="cycle-wrap">
+      <div class="cycle-item">
+        <div class="step-name">🫙 המחשה</div>
+        <div class="step-impl">מכשיר PEZ — חווינו LIFO עם הידיים</div>
+      </div>
+      <div class="cycle-item">
+        <div class="step-name">💡 מושגים</div>
+        <div class="step-impl">גילינו את עיקרון Last In First Out</div>
+      </div>
+      <div class="cycle-item">
+        <div class="step-name">📝 אוצר מילים</div>
+        <div class="step-impl">דחוף / קפוץ ← push / pop ← מחסנית / Stack</div>
+      </div>
+      <div class="cycle-item">
+        <div class="step-name">📋 עקרונות</div>
+        <div class="step-impl">פתרנו את בעיית ההיפוך בפסאדו-קוד</div>
+      </div>
+      <div class="cycle-item">
+        <div class="step-name">💻 כתיבת קוד</div>
+        <div class="step-impl">תירגמנו לקוד אמיתי — לאחר שהבנו את העיקרון</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 11 — ERRORS ══════════════════ -->
+<div class="slide">
+  <div class="slide-heading">שגיאות נפוצות</div>
+  <div class="content-area">
+    <div class="error-list">
+      <div class="error-item">
+        <div class="error-title">דחיפת 1- למחסנית</div>
+        יש לבדוק את התנאי לפני הדחיפה. 1- הוא סימן עצירה, לא ערך לשמירה
+      </div>
+      <div class="error-item">
+        <div class="error-title">Push לפני Pop</div>
+        אם המחסנית ריקה ומנסים Pop — שגיאת ריצה. תמיד בדקו לפני ()Pop
+      </div>
+      <div class="error-item">
+        <div class="error-title">לא בודקים !()IsEmpty</div>
+        לפני כל ()Pop בלולאה — חובה לוודא שיש מה להוציא
+      </div>
+      <div class="error-item">
+        <div class="error-title">דחוף + קפוץ באותה איטרציה</div>
+        מכניסים ומיד מוציאים — המחסנית תישאר ריקה ולא יצטבר כלום
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SLIDE 12 — RECURSION ══════════════════ -->
+<div class="slide">
+  <div class="slide-heading">להעשרה — פתרון חלופי: רקורסיה</div>
+  <div class="content-area">
+    <div class="code-block"><span class="kw">static void</span> <span class="cls">PrintReverse</span>()
+{
+    <span class="kw">int</span> num = <span class="cls">int</span>.Parse(<span class="cls">Console</span>.ReadLine());
+    <span class="kw">if</span> (num == <span class="num">-1</span>)
+    {
+        <span class="kw">return</span>;
+    }
+    <span class="cls">PrintReverse</span>(); <span class="cmt">// call yourself before printing</span>
+    <span class="cls">Console</span>.WriteLine(num);
+}</div>
+    <div class="teacher-note" style="margin-top:20px;">
+      <ul>
+        <li>הרקורסיה עצמה ממומשת בעזרת מחסנית. ה-call stack של השפה הוא מחסנית</li>
+        <li>שני הפתרונות זהים במהות — באחד המחסנית גלויה, בשני היא מתחת לפני השטח</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div><!-- /presentation-container -->
+
+<!-- ══════════════════ NAV ══════════════════ -->
+<div class="nav-buttons">
+  <button class="nav-btn" onclick="nextSlide()" id="next-btn">הבא ←</button>
+  <button class="nav-btn" onclick="prevSlide()" id="prev-btn" disabled>→ הקודם</button>
+</div>
+<div class="slide-number" id="slide-number"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let currentSlide = 0;
+
+  function showSlide(n) {
+    slides[currentSlide].classList.remove('active');
+    currentSlide = n;
+    slides[currentSlide].classList.add('active');
+    document.getElementById('prev-btn').disabled = currentSlide === 0;
+    document.getElementById('next-btn').disabled = currentSlide === totalSlides - 1;
+    const isTitle = slides[currentSlide].classList.contains('title-slide');
+    document.getElementById('slide-number').textContent = isTitle ? '' : currentSlide + ' / ' + (totalSlides - 1);
+  }
+
+  /*function nextSlide() { if (currentSlide < totalSlides - 1) showSlide(currentSlide + 1); }*/
+
+  let vocabRevealed = false;
+  function nextSlide() {
+    if (currentSlide === 3 && !vocabRevealed) {
+      document.getElementById('en-push').style.opacity = '1';
+      document.getElementById('en-pop').style.opacity = '1';
+      vocabRevealed = true;
+      return;
+    }
+    if (currentSlide < totalSlides - 1) showSlide(currentSlide + 1);
+  }  
+  function prevSlide() { if (currentSlide > 0) showSlide(currentSlide - 1); }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft' || e.key === ' ') nextSlide();
+    else if (e.key === 'ArrowRight') prevSlide();
+  });
+
+  // ── ANIMATION ──
+const animNums = [3, 7, 2, 5];
+const animSteps = [
+  { line: 'aline0', action: 'read',    val: 3 },
+  { line: 'aline1', action: 'check',   val: 3 },
+  { line: 'aline2', action: 'push',    val: 3 },
+  { line: 'aline3', action: 'read',    val: 7 },
+  { line: 'aline1', action: 'check',   val: 7 },
+  { line: 'aline2', action: 'push',    val: 7 },
+  { line: 'aline3', action: 'read',    val: 2 },
+  { line: 'aline1', action: 'check',   val: 2 },
+  { line: 'aline2', action: 'push',    val: 2 },
+  { line: 'aline3', action: 'read',    val: 5 },
+  { line: 'aline1', action: 'check',   val: 5 },
+  { line: 'aline2', action: 'push',    val: 5 },
+  { line: 'aline3', action: 'read',    val: -1 },
+  { line: 'aline1', action: 'check',   val: -1 },
+  { line: 'aline5', action: 'checkpop', val: null },
+  { line: 'aline6', action: 'pop',     val: null },
+  { line: 'aline7', action: 'print',   val: null },
+  { line: 'aline5', action: 'checkpop', val: null },
+  { line: 'aline6', action: 'pop',     val: null },
+  { line: 'aline7', action: 'print',   val: null },
+  { line: 'aline5', action: 'checkpop', val: null },
+  { line: 'aline6', action: 'pop',     val: null },
+  { line: 'aline7', action: 'print',   val: null },
+  { line: 'aline5', action: 'checkpop', val: null },
+  { line: 'aline6', action: 'pop',     val: null },
+  { line: 'aline7', action: 'print',   val: null },
+  { line: 'aline5', action: 'checkpop', val: null },
+  { line: 'aline8', action: 'checkpop', val: null },
+  { line: null,     action: 'clear',   val: null },
+];
+
+let stepIdx = 0;
+let stackContents = [];
+let outputNums = [];
+let lastPopped = null;
+
+function highlightLine(id) {
+  ['aline0','aline1','aline2','aline3','aline5','aline6','aline7','aline8'].forEach(function(l) {
+    const el = document.getElementById(l);
+    if (el) el.classList.remove('active-line');
+  });
+  if (id !== null) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active-line');
+  }
+}
+
+function renderStack() {
+  const box = document.getElementById('stack-box');
+  box.innerHTML = '';
+  stackContents.forEach(function(val) {
+    const el = document.createElement('div');
+    el.className = 'stack-item';
+    el.textContent = val;
+    box.appendChild(el);
+  });
+}
+
+function setCurrentInput(val) {
+  const el = document.getElementById('current-input');
+  /*if (el) el.textContent = val !== null ? 'input: ' + val : '';*/
+  if (el) el.textContent = val !== null && val != -1 ? 'input: ' + val : '';
+  if (el && val == -1) el.textContent = 'input: -1';
+}
+
+function setOutput() {
+  document.getElementById('anim-output').textContent = 'output: ' + outputNums.join(', ');
+}
+
+function animStep() {
+  if (stepIdx >= animSteps.length) return;
+  const step = animSteps[stepIdx];
+  highlightLine(step.line);
+
+  if (step.action === 'read') {
+    setCurrentInput(step.val);
+  }
+  else if (step.action === 'check') {
+    // just highlight the line
+  }
+  else if (step.action === 'push') {
+    stackContents.push(step.val);
+    renderStack();
+    setCurrentInput(null);
+  }
+  else if (step.action === 'checkpop') {
+    setCurrentInput(null);
+  }
+  else if (step.action === 'pop') {
+    lastPopped = stackContents.pop();
+    renderStack();
+    const pd = document.getElementById('popped-display');
+    if (pd) pd.textContent = '↑ ' + lastPopped;
+  }
+  else if (step.action === 'print') {
+    outputNums.push(lastPopped);
+    setOutput();
+    const pd = document.getElementById('popped-display');
+    if (pd) pd.textContent = '';
+  }
+  else if (step.action === 'done') {
+    highlightLine(step.line);
+  }
+  else if (step.action === 'clear') {
+    highlightLine(null);
+  }
+  
+
+  stepIdx++;
+}
+
+function animReset() {
+  stepIdx = 0;
+  stackContents = [];
+  outputNums = [];
+  lastPopped = null;
+  document.getElementById('anim-output').textContent = 'output: ';
+  renderStack();
+  setOutput();
+  setCurrentInput(null);
+  highlightLine(null);
+}
+</script>
+</body>
+</html>
